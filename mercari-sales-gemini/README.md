@@ -1,9 +1,8 @@
-# メルカリ売上管理 Gemini版
+# mercari-sales-gemini
 
-## Vercel設定
-Environment Variables に以下を追加してください。
+Gemini API対応版。iPadの大きいスクショをブラウザ側で軽量化してから送信します。
 
-- Name: `GEMINI_API_KEY`
-- Value: Google AI Studioで取得したAPIキー
+Vercel Environment Variables:
+- GEMINI_API_KEY
 
-その後、Redeployしてください。
+Root Directory: `mercari-sales-gemini`

@@ -10,6 +10,7 @@ export default function Page(){
   const [q,setQ]=useState('')
   const [loading,setLoading]=useState(false)
   const [message,setMessage]=useState('')
+  const [debug,setDebug]=useState('')
   const [form,setForm]=useState({date:today(),series:'',character:'',item:'',price:'',shipping:'160'})
   useEffect(()=>{ try{ setSales(JSON.parse(localStorage.getItem('mercari-sales')||'[]')) }catch{} },[])
   useEffect(()=>{ localStorage.setItem('mercari-sales',JSON.stringify(sales)) },[sales])
@@ -20,13 +21,32 @@ export default function Page(){
     for(const s of filtered){ const key=s.series||'未分類'; const v=m.get(key)||{count:0,profit:0,sales:0}; v.count++; v.profit+=s.profit; v.sales+=s.price; m.set(key,v) }
     return Array.from(m.entries()).sort((a,b)=>b[1].profit-a[1].profit)
   },[filtered])
+
+  async function compressImage(file: File): Promise<File> {
+    const bitmap = await createImageBitmap(file)
+    const maxSide = 1400
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
+    const w = Math.round(bitmap.width * scale)
+    const h = Math.round(bitmap.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(bitmap, 0, 0, w, h)
+    const blob: Blob = await new Promise(resolve => canvas.toBlob(b => resolve(b!), 'image/jpeg', 0.82))
+    return new File([blob], 'mercari-screenshot.jpg', { type: 'image/jpeg' })
+  }
   async function analyze(file: File){
-    setLoading(true); setMessage('画像を読み取り中です…')
+    setLoading(true); setMessage('画像を読み取り中です…'); setDebug('')
     try{
-      const fd=new FormData(); fd.append('image',file)
+      const small = await compressImage(file)
+      const fd=new FormData(); fd.append('image',small)
       const res=await fetch('/api/analyze',{method:'POST',body:fd})
-      const data=await res.json()
-      if(!res.ok) throw new Error(data.error || '読み取りに失敗しました')
+      const text = await res.text()
+      let data:any
+      try { data = JSON.parse(text) } catch { throw new Error('サーバーの返答がJSONではありません: ' + text.slice(0,500)) }
+      setDebug(data.detail || data.debug || '')
+      if(data.ok === false || !res.ok) throw new Error(data.error || '読み取りに失敗しました')
       setForm(f=>({ ...f, series:data.series||f.series, character:data.character||f.character, item:data.item||f.item, price:data.price||f.price, shipping:data.shipping||f.shipping||'160' }))
       setMessage('読み取りました。内容を確認して「追加する」を押してください。')
     }catch(e:any){ setMessage(e.message || '読み取りに失敗しました') }
@@ -51,6 +71,7 @@ export default function Page(){
     <section className="card upload">
       <label>売れた画面のスクショ<input type="file" accept="image/*" onChange={e=>{const file=e.target.files?.[0]; if(file) analyze(file)}} /></label>
       <p>{loading?'読み取り中…':message||'画像を選ぶと、作品名・キャラ・商品名・価格を自動入力します。'}</p>
+      {debug && <pre className="debug">{debug}</pre>}
     </section>
     <section className="card grid">
       <label>日付<input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label>
