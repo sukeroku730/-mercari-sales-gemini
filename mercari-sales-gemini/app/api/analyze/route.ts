@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = `あなたはメルカリ売上管理アプリの画像読み取り担当です。\n売れた商品のスクリーンショットから次を抽出してください。\n必ずJSONだけで返してください。\n\n{\n  "series": "作品名。例: 呪術廻戦",\n  "character": "キャラ名。分からなければ空文字",\n  "item": "商品名。例: アクリルスタンド",\n  "price": "販売価格の数字だけ。例: 3333",\n  "shipping": "送料の数字だけ。ゆうパケットポストminiなら160。分からなければ160"\n}\n\n注意:\n- 価格は「¥3,333」なら3333にする。\n- 手数料や利益は計算しない。\n- 分からない項目は空文字にする。`
 
-    const models = ['gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-latest']
+    const models = ['gemini-2.0-flash','gemini-1.5-flash','gemini-2.5-flash']
     let lastError = ''
 
     for (const model of models) {
